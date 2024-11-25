@@ -1,95 +1,9 @@
---[[
-
-=====================================================================
-==================== READ THIS BEFORE CONTINUING ====================
-=====================================================================
-========                                    .-----.          ========
-========         .----------------------.   | === |          ========
-========         |.-""""""""""""""""""-.|   |-----|          ========
-========         ||                    ||   | === |          ========
-========         ||   KICKSTART.NVIM   ||   |-----|          ========
-========         ||                    ||   | === |          ========
-========         ||                    ||   |-----|          ========
-========         ||:Tutor              ||   |:::::|          ========
-========         |'-..................-'|   |____o|          ========
-========         `"")----------------(""`   ___________      ========
-========        /::::::::::|  |::::::::::\  \ no mouse \     ========
-========       /:::========|  |==hjkl==:::\  \ required \    ========
-========      '""""""""""""'  '""""""""""""'  '""""""""""'   ========
-========                                                     ========
-=====================================================================
-=====================================================================
-
-What is Kickstart?
-
-  Kickstart.nvim is *not* a distribution.
-
-  Kickstart.nvim is a starting point for your own configuration.
-    The goal is that you can read every line of code, top-to-bottom, understand
-    what your configuration is doing, and modify it to suit your needs.
-
-    Once you've done that, you can start exploring, configuring and tinkering to
-    make Neovim your own! That might mean leaving Kickstart just the way it is for a while
-    or immediately breaking it into modular pieces. It's up to you!
-
-    If you don't know anything about Lua, I recommend taking some time to read through
-    a guide. One possible example which will only take 10-15 minutes:
-      - https://learnxinyminutes.com/docs/lua/
-
-    After understanding a bit more about Lua, you can use `:help lua-guide` as a
-    reference for how Neovim integrates Lua.
-    - :help lua-guide
-    - (or HTML version): https://neovim.io/doc/user/lua-guide.html
-
-Kickstart Guide:
-
-  TODO: The very first thing you should do is to run the command `:Tutor` in Neovim.
-
-    If you don't know what this means, type the following:
-      - <escape key>
-      - :
-      - Tutor
-      - <enter key>
-
-    (If you already know the Neovim basics, you can skip this step.)
-
-  Once you've completed that, you can continue working through **AND READING** the rest
-  of the kickstart init.lua.
-
-  Next, run AND READ `:help`.
-    This will open up a help window with some basic information
-    about reading, navigating and searching the builtin help documentation.
-
-    This should be the first place you go to look when you're stuck or confused
-    with something. It's one of my favorite Neovim features.
-
-    MOST IMPORTANTLY, we provide a keymap "<space>sh" to [s]earch the [h]elp documentation,
-    which is very useful when you're not exactly sure of what you're looking for.
-
-  I have left several `:help X` comments throughout the init.lua
-    These are hints about where to find more information about the relevant settings,
-    plugins or Neovim features used in Kickstart.
-
-   NOTE: Look for lines like this
-
-    Throughout the file. These are for you, the reader, to help you understand what is happening.
-    Feel free to delete them once you know what you're doing, but they should serve as a guide
-    for when you are first encountering a few different constructs in your Neovim config.
-
-If you experience any errors while trying to install kickstart, run `:checkhealth` for more info.
-
-I hope you enjoy your Neovim journey,
-- TJ
-
-P.S. You can delete this when you're done too. It's your config now! :)
---]]
-
 -- Set <space> as the leader key
 -- See `:help mapleader`
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
-
+-- vim.lsp.set_log_level 'debug'
 -- Set to true if you have a Nerd Font installed and selected in the terminal
 vim.g.have_nerd_font = true
 
@@ -99,13 +13,10 @@ vim.opt.guifont = 'JetBrainsMono Nerd Font:h12'
 
 -- [[ Setting options ]]
 -- See `:help vim.opt`
--- NOTE: You can change these options as you wish!
---  For more options, you can see `:help option-list`
+-- NOTE:For more options, you can see `:help option-list`
 
 -- Make line numbers default
 vim.opt.number = true
--- You can also add relative line numbers, to help with jumping.
---  Experiment for yourself to see if you like it!
 -- vim.opt.relativenumber = true
 
 -- Enable mouse mode, can be useful for resizing splits for example!
@@ -122,7 +33,6 @@ vim.api.nvim_create_autocmd({ 'BufEnter', 'BufWinEnter' }, {
 vim.opt.showmode = false
 
 -- Sync clipboard between OS and Neovim.
---  Schedule the setting after `UiEnter` because it can increase startup-time.
 --  Remove this option if you want your OS clipboard to remain independent.
 --  See `:help 'clipboard'`
 vim.schedule(function()
@@ -132,13 +42,13 @@ end)
 -- Enable break indent
 vim.opt.breakindent = true
 -- Folding setup
-vim.wo.foldmethod = 'expr'
-vim.wo.foldexpr = 'nvim_treesitter#foldexpr()'
-vim.wo.foldnestmax = 3
-vim.wo.foldminlines = 1
-vim.wo.foldlevel = 99
-vim.wo.foldtext =
-  [[substitute(getline(v:foldstart),'\\t',repeat('\ ',&tabstop),'g').'...'.trim(getline(v:foldend)) . ' (' . (v:foldend - v:foldstart + 1) . ip -o -sel clipboard)lines)']]
+vim.opt.foldmethod = 'expr'
+vim.opt.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+vim.opt.foldcolumn = '1'
+vim.opt.foldtext = ''
+vim.opt.foldlevel = 99
+vim.opt.foldlevelstart = 3
+vim.opt.foldnestmax = 3
 
 -- Save undo history
 vim.opt.undofile = true
@@ -213,15 +123,14 @@ vim.api.nvim_set_keymap('i', '<F1>', '<cmd>lua vim.lsp.buf.signature_help()<CR>'
 -- Trigger completion
 vim.api.nvim_set_keymap('i', '<C-Space>', '<cmd>lua require("cmp").complete()<CR>', { noremap = true, silent = true })
 
--- Custom Python functions (these assume you have defined `python_tc_template()` and `python_shebang()`)
-vim.api.nvim_set_keymap('n', '<leader>kk', '<cmd>lua python_tc_template()<CR>', { noremap = true, silent = true })
+-- Custom Python functions
 vim.api.nvim_set_keymap('n', '<leader>kp', '<cmd>lua python_shebang()<CR>', { noremap = true, silent = true })
 
 -- Run Flake8 on the current file with F7
 vim.api.nvim_set_keymap(
   'n',
   '<F7>',
-  ':!flake8 --max-line-length=100 --ignore=DAR101,DAR201,DAR401,FNE005,FNE008,N802 %:p<CR>',
+  ':!flake8 --max-line-length=100 --ignore=DAR101,DAR201,DAR401,DAR103,E231,FNE005,FNE008,N802 %:p<CR>',
   { noremap = true, silent = true }
 )
 
@@ -305,9 +214,6 @@ vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
--- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
--- is not what someone will guess without a bit more experience.
---
 -- NOTE: This won't work in all terminal emulators/tmux/etc. Try your own mapping
 -- or just use <C-\><C-n> to exit terminal mode
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
@@ -345,33 +251,20 @@ end ---@diagnostic disable-next-line: undefined-field
 vim.opt.rtp:prepend(lazypath)
 
 -- [[ Configure and install plugins ]]
---
+
 --  To check the current status of your plugins, run
 --    :Lazy
---
---  You can press `?` in this menu for help. Use `:q` to close the window
 --
 --  To update plugins you can run
 --    :Lazy update
 --
--- NOTE: Here is where you install your plugins.
 require('lazy').setup {
-  -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
-  'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
 
-  -- NOTE: Plugins can also be added by using a table,
-  -- with the first argument being the link and the following
-  -- keys can be used to configure plugin behavior/loading/etc.
-  --
-  -- Use `opts = {}` to force a plugin to be loaded.
-  --
+  -- Detect tabstop and shiftwidth automatically
+  {
+    'tpope/vim-sleuth'
+  },
 
-  -- Here is a more advanced example where we pass configuration
-  -- options to `gitsigns.nvim`. This is equivalent to the following Lua:
-  --    require('gitsigns').setup({ ... })
-  --
-  -- See `:help gitsigns` to understand what the configuration keys do
-  -- Header bar
   {
     -- Bufferline for showing open files
     'akinsho/bufferline.nvim',
@@ -451,6 +344,8 @@ require('lazy').setup {
               end,
               icon = ' ', -- Optional: Add an icon for visual appeal
             },
+            'diagnostics',
+            'filename',
           },
           -- Right status bar
           -- lualine_x = {
@@ -518,6 +413,14 @@ require('lazy').setup {
     'petertriho/nvim-scrollbar',
     config = function()
       require('scrollbar').setup()
+    end,
+  },
+
+  -- Smooth scrolling
+  {
+    'karb94/neoscroll.nvim',
+    config = function()
+      require('neoscroll').setup {}
     end,
   },
 
@@ -1078,6 +981,67 @@ require('lazy').setup {
     end,
   },
   {
+    'luukvbaal/statuscol.nvim',
+    config = function()
+      local builtin = require 'statuscol.builtin'
+      require('statuscol').setup {
+        --   -- configuration goes here, for example:
+        --   relculright = true,
+        --   segments = {
+        --     { text = { builtin.foldfunc }, click = 'v:lua.ScFa' },
+        --     {
+        --       sign = { namespace = { 'diagnostic/signs' }, maxwidth = 2, auto = true },
+        --       click = 'v:lua.ScSa',
+        --     },
+        --     { text = { builtin.lnumfunc }, click = 'v:lua.ScLa' },
+        --     {
+        --       sign = { name = { '.*' }, maxwidth = 2, colwidth = 1, auto = true, wrap = true },
+        --       click = 'v:lua.ScSa',
+        --     },
+        --     {
+        --       -- Git and diagnostic signs segment
+        --       sign = { name = { 'Diagnostic', 'GitSigns' }, maxwidth = 1, colwidth = 1, auto = true },
+        --       click = 'v:lua.ScSa',
+        --     },
+        --   },
+      }
+    end,
+  },
+  -- QoL plugin (snacks)
+  {
+    'folke/snacks.nvim',
+    priority = 1000,
+    lazy = false,
+    opts = {
+      -- your configuration comes here
+      quickfile = { enabled = true },
+      statuscolumn = { enabled = true },
+    },
+    keys = {
+      {
+        '<leader>gL',
+        function()
+          Snacks.lazygit()
+        end,
+        desc = 'Lazygit',
+      },
+      {
+        '<leader>tt',
+        function()
+          Snacks.terminal()
+        end,
+        desc = 'Toggle Terminal',
+      },
+      {
+        '<leader>gF',
+        function()
+          Snacks.lazygit.log_file()
+        end,
+        desc = 'Lazygit Current File History',
+      },
+    },
+  },
+  {
     'numToStr/Comment.nvim',
     config = function()
       require('Comment').setup()
@@ -1128,7 +1092,6 @@ require('lazy').setup {
       },
     },
   },
-
   { -- Autocompletion
     'hrsh7th/nvim-cmp',
     event = 'InsertEnter',
@@ -1321,6 +1284,9 @@ require('lazy').setup {
       },
       indent = { enable = true, disable = { 'ruby' } },
     },
+    -- config = function()
+    --   require('nvim-treesitter.install').prefer_git = true
+    -- end,
     -- There are additional nvim-treesitter modules that you can use to interact
     -- with nvim-treesitter. You should go explore a few and see what interests you:
     --
