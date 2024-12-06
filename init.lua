@@ -262,7 +262,7 @@ require('lazy').setup {
 
   -- Detect tabstop and shiftwidth automatically
   {
-    'tpope/vim-sleuth'
+    'tpope/vim-sleuth',
   },
 
   {
@@ -980,6 +980,8 @@ require('lazy').setup {
       }
     end,
   },
+
+  -- Status column
   {
     'luukvbaal/statuscol.nvim',
     config = function()
