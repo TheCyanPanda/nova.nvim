@@ -1223,12 +1223,23 @@ require('lazy').setup {
       -- Load the colorscheme here.
       -- Like many other themes, this one has different styles, and you could load
       -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-      vim.cmd.colorscheme 'tokyonight-night'
+      vim.cmd.colorscheme 'catppuccin-mocha'
 
       -- You can configure highlights by doing something like:
       vim.cmd.hi 'Comment gui=none'
     end,
   },
+  -- Catppuccin theme
+  { 'catppuccin/nvim' },
+
+  -- Kanagawa theme
+  { 'rebelot/kanagawa.nvim' },
+
+  -- Nord theme
+  { 'arcticicestudio/nord-vim' },
+
+  -- Nightfox theme
+  { 'EdenEast/nightfox.nvim' },
 
   -- Highlight todo, notes, etc in comments
   { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
@@ -1318,6 +1329,22 @@ require('lazy').setup {
       require('mason-null-ls').setup {
         ensure_installed = { 'flake8' }, -- Make sure Flake8 is installed
       }
+    end,
+  },
+
+  -- Breadcrums
+  {
+    'Bekaboo/dropbar.nvim',
+    -- optional, but required for fuzzy finder support
+    dependencies = {
+      'nvim-telescope/telescope-fzf-native.nvim',
+      build = 'make',
+    },
+    config = function()
+      local dropbar_api = require 'dropbar.api'
+      vim.keymap.set('n', '<Leader>;', dropbar_api.pick, { desc = 'Pick symbols in winbar' })
+      vim.keymap.set('n', '[;', dropbar_api.goto_context_start, { desc = 'Go to start of current context' })
+      vim.keymap.set('n', '];', dropbar_api.select_next_context, { desc = 'Select next context' })
     end,
   },
 
