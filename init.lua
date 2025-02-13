@@ -1,5 +1,4 @@
 -- Set <space> as the leader key
--- See `:help mapleader`
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
@@ -12,7 +11,6 @@ vim.g.have_nerd_font = true
 vim.opt.guifont = 'JetBrainsMono Nerd Font:h12'
 
 -- [[ Setting options ]]
--- See `:help vim.opt`
 -- NOTE:For more options, you can see `:help option-list`
 
 -- Make line numbers default
@@ -89,8 +87,6 @@ function MoveLineLeftOrRight()
   end
 end
 
--- Keybinding for alt+h to move the current line
-
 -- Local functions --
 function python_shebang()
   local pos = vim.api.nvim_win_get_cursor(0)[2]
@@ -130,13 +126,19 @@ vim.api.nvim_set_keymap('i', '<F1>', '<cmd>lua vim.lsp.buf.signature_help()<CR>'
 vim.api.nvim_set_keymap('i', '<C-Space>', '<cmd>lua require("cmp").complete()<CR>', { noremap = true, silent = true })
 
 -- Custom Python functions
+-- Add python shebang
 vim.api.nvim_set_keymap('n', '<leader>kp', '<cmd>lua python_shebang()<CR>', { noremap = true, silent = true })
+-- Create f-string for debugging variables
+vim.keymap.set('n', '<leader>kf', function()
+  vim.api.nvim_put({ 'print(f"{=}")' }, 'c', true, true) -- Insert the text
+  vim.cmd 'normal! F=a' -- Move to the '{' and enter insert mode before the '='
+end, { desc = "Insert print('{=}') with cursor inside" })
 
 -- Run Flake8 on the current file with F7
 vim.api.nvim_set_keymap(
   'n',
   '<F7>',
-  ':!flake8 --max-line-length=100 --ignore=DAR101,DAR201,DAR401,DAR103,E231,FNE005,FNE008,N802 %:p<CR>',
+  ':!flake8 --max-line-length=100 --ignore=DAR101,DAR201,DAR401,DAR103,E231,FNE005,FNE008,N802,DAR102,DAR003 %:p<CR>',
   { noremap = true, silent = true }
 )
 
@@ -159,9 +161,18 @@ vim.api.nvim_set_keymap('n', '<leader>Tg', ':Telescope grep_string<CR>', { norem
 vim.api.nvim_set_keymap('n', '<leader>Tp', ':Telescope find_files<CR>', { noremap = true, silent = true }) -- Find files
 vim.api.nvim_set_keymap('n', '<leader>Tr', ':Telescope current_buffer_fuzzy_find<CR>', { noremap = true, silent = true }) -- Fuzzy find in current buffer
 vim.api.nvim_set_keymap('n', '<leader>Tb', ':Telescope buffers<CR>', { noremap = true, silent = true }) -- List open buffers
+vim.api.nvim_set_keymap(
+  'n',
+  '<leader>TR',
+  [[:lua require('telescope.builtin').current_buffer_fuzzy_find({ default_text = vim.fn.expand("<cword>") })<CR>]],
+  { noremap = true, silent = true }
+) -- Search for word under cursor in current buffer
 
 -- Show full path of current file
 vim.api.nvim_set_keymap('n', '<leader>ss', ":echo expand('%:p')<CR>", { noremap = true, silent = true })
+
+-- Toggle diagnostics
+vim.api.nvim_set_keymap('n', '<leader>td', ':Trouble diagnostics<CR>', { noremap = true, silent = true })
 
 -- Custom options
 vim.opt.colorcolumn = '100' -- Set the color column to highlight at 100 characters
@@ -185,9 +196,6 @@ vim.opt.splitright = true
 vim.opt.splitbelow = true
 
 -- Sets how neovim will display certain whitespace characters in the editor.
---  See `:help 'list'`
---  and `:help 'listchars'`
--- List characters setup
 vim.opt.listchars = {
   tab = '  →',
   space = '·',
@@ -209,9 +217,6 @@ vim.opt.cursorline = true
 -- Minimal number of screen lines to keep above and below the cursor.
 vim.opt.scrolloff = 10
 
--- [[ Basic Keymaps ]]
---  See `:help vim.keymap.set()`
-
 -- Clear highlights on search when pressing <Esc> in normal mode
 --  See `:help hlsearch`
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
@@ -226,7 +231,6 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 -- vim.keymap.set('n', '<down>', '<cmd>echo "Use j to move!!"<CR>')
 
 -- [[ Basic Autocommands ]]
---  See `:help lua-guide-autocommands`
 
 -- Highlight when yanking (copying) text
 --  Try it with `yap` in normal mode
@@ -255,10 +259,7 @@ vim.opt.rtp:prepend(lazypath)
 
 --  To check the current status of your plugins, run
 --    :Lazy
---
---  To update plugins you can run
---    :Lazy update
---
+
 require('lazy').setup {
 
   -- Detect tabstop and shiftwidth automatically
@@ -450,6 +451,44 @@ require('lazy').setup {
     'sindrets/diffview.nvim',
     event = 'BufRead',
   },
+  -- Diagnostics / errors/ warnings
+  {
+    'folke/trouble.nvim',
+    opts = {}, -- for default options, refer to the configuration section for custom setup.
+    cmd = 'Trouble',
+    keys = {
+      {
+        '<leader>xx',
+        '<cmd>Trouble diagnostics toggle<cr>',
+        desc = 'Diagnostics (Trouble)',
+      },
+      {
+        '<leader>xX',
+        '<cmd>Trouble diagnostics toggle filter.buf=0<cr>',
+        desc = 'Buffer Diagnostics (Trouble)',
+      },
+      {
+        '<leader>cs',
+        '<cmd>Trouble symbols toggle focus=false<cr>',
+        desc = 'Symbols (Trouble)',
+      },
+      {
+        '<leader>cl',
+        '<cmd>Trouble lsp toggle focus=false win.position=right<cr>',
+        desc = 'LSP Definitions / references / ... (Trouble)',
+      },
+      {
+        '<leader>xL',
+        '<cmd>Trouble loclist toggle<cr>',
+        desc = 'Location List (Trouble)',
+      },
+      {
+        '<leader>xQ',
+        '<cmd>Trouble qflist toggle<cr>',
+        desc = 'Quickfix List (Trouble)',
+      },
+    },
+  },
 
   -- Search Panel
   {
@@ -513,13 +552,6 @@ require('lazy').setup {
     end,
   },
 
-  -- CMP Tabnine
-  {
-    'tzachar/cmp-tabnine',
-    build = './install.sh',
-    dependencies = 'hrsh7th/nvim-cmp',
-  },
-
   -- Goto Preview
   {
     'rmagatti/goto-preview',
@@ -534,6 +566,18 @@ require('lazy').setup {
       vim.keymap.set('n', '<F2>', "<cmd>lua require('goto-preview').goto_preview_definition()<CR>", { noremap = true })
       vim.keymap.set('n', '<F3>', "<cmd>lua require('goto-preview').goto_preview_type_definition()<CR>", { noremap = true })
     end,
+  },
+  -- Leap
+  {
+    'ggandor/leap.nvim',
+    dependencies = { 'tpope/vim-repeat' },
+    config = function()
+      require('leap').add_default_mappings()
+    end,
+  },
+  {
+    'tpope/vim-repeat',
+    lazy = false, -- Ensures repeat.nvim is always loaded
   },
 
   { -- Adds git related signs to the gutter, as well as utilities for managing changes
@@ -554,21 +598,6 @@ require('lazy').setup {
       vim.keymap.set('n', '<leader>gt', ':Gitsigns toggle_current_line_blame<CR>', {})
     end,
   },
-
-  -- NOTE: Plugins can also be configured to run Lua code when they are loaded.
-  --
-  -- This is often very useful to both group configuration, as well as handle
-  -- lazy loading plugins that don't need to be loaded immediately at startup.
-  --
-  -- For example, in the following configuration, we use:
-  --  event = 'VimEnter'
-  --
-  -- which loads which-key before all the UI elements are loaded. Events can be
-  -- normal autocommands events (`:help autocmd-events`).
-  --
-  -- Then, because we use the `config` key, the configuration only runs
-  -- after the plugin has been loaded:
-  --  config = function() ... end
 
   { -- Useful plugin to show you pending keybinds.
     'folke/which-key.nvim',
@@ -623,15 +652,28 @@ require('lazy').setup {
       },
     },
   },
+  -- File manager --
+  {
+    'nvim-neo-tree/neo-tree.nvim',
+    branch = 'v3.x',
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+      'nvim-tree/nvim-web-devicons', -- optional, for icons
+      'MunifTanjim/nui.nvim',
+    },
+    config = function()
+      require('neo-tree').setup {
+        filesystem = {
+          follow_current_file = true, -- Opens the folder of the current file
+          use_libuv_file_watcher = true, -- Auto-refresh
+        },
+      }
+      -- Replace NvimTreeToggle keymap
+      vim.keymap.set('n', '<leader>e', ':Neotree toggle<CR>', { noremap = true, silent = true })
+    end,
+  },
 
-  -- NOTE: Plugins can specify dependencies.
-  --
-  -- The dependencies are proper plugin specifications as well - anything
-  -- you do for a plugin at the top level, you can do for a dependency.
-  --
-  -- Use the `dependencies` key to specify the dependencies of a particular plugin
-
-  { -- Fuzzy Finder (files, lsp, etc)
+  { -- TELESCOPE  - Fuzzy Finder (files, lsp, etc)
     'nvim-telescope/telescope.nvim',
     event = 'VimEnter',
     branch = '0.1.x',
@@ -660,44 +702,15 @@ require('lazy').setup {
         },
         config = function()
           require('nvim-tree').setup {}
-          vim.keymap.set('n', '<leader>e', ':NvimTreeToggle<CR>', { noremap = true, silent = true })
         end,
       },
       -- Useful for getting pretty icons, but requires a Nerd Font.
       { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font },
     },
     config = function()
-      -- Telescope is a fuzzy finder that comes with a lot of different things that
-      -- it can fuzzy find! It's more than just a "file finder", it can search
-      -- many different aspects of Neovim, your workspace, LSP, and more!
-      --
-      -- The easiest way to use Telescope, is to start by doing something like:
-      --  :Telescope help_tags
-      --
-      -- After running this command, a window will open up and you're able to
-      -- type in the prompt window. You'll see a list of `help_tags` options and
-      -- a corresponding preview of the help.
-      --
-      -- Two important keymaps to use while in Telescope are:
-      --  - Insert mode: <c-/>
-      --  - Normal mode: ?
-      --
-      -- This opens a window that shows you all of the keymaps for the current
-      -- Telescope picker. This is really useful to discover what Telescope can
-      -- do as well as how to actually do it!
-
       -- [[ Configure Telescope ]]
       -- See `:help telescope` and `:help telescope.setup()`
       require('telescope').setup {
-        -- You can put your default mappings / updates / etc. in here
-        --  All the info you're looking for is in `:help telescope.setup()`
-        --
-        -- defaults = {
-        --   mappings = {
-        --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
-        --   },
-        -- },
-        -- pickers = {}
         extensions = {
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
@@ -722,16 +735,6 @@ require('lazy').setup {
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
 
-      -- Slightly advanced example of overriding default behavior and theme
-      -- vim.keymap.set('n', '<leader>/', function()
-      --   -- You can pass additional configuration to Telescope to change the theme, layout, etc.
-      --   builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
-      --     winblend = 10,
-      --     previewer = false,
-      --   })
-      -- end, { desc = '[/] Fuzzily search in current buffer' })
-
-      -- It's also possible to pass additional configuration options.
       --  See `:help telescope.builtin.live_grep()` for information about particular keys
       vim.keymap.set('n', '<leader>s/', function()
         builtin.live_grep {
@@ -777,32 +780,17 @@ require('lazy').setup {
       -- Allows extra capabilities provided by nvim-cmp
       'hrsh7th/cmp-nvim-lsp',
     },
+    flags = {
+      debounce_text_changes = 500,
+    },
+    settings = {
+      python = {
+        analysis = {
+          maxNumberOfProblems = 10000, -- Limit number of diagnostics shown
+        },
+      },
+    },
     config = function()
-      -- Brief aside: **What is LSP?**
-      --
-      -- LSP is an initialism you've probably heard, but might not understand what it is.
-      --
-      -- LSP stands for Language Server Protocol. It's a protocol that helps editors
-      -- and language tooling communicate in a standardized fashion.
-      --
-      -- In general, you have a "server" which is some tool built to understand a particular
-      -- language (such as `gopls`, `lua_ls`, `rust_analyzer`, etc.). These Language Servers
-      -- (sometimes called LSP servers, but that's kind of like ATM Machine) are standalone
-      -- processes that communicate with some "client" - in this case, Neovim!
-      --
-      -- LSP provides Neovim with features like:
-      --  - Go to definition
-      --  - Find references
-      --  - Autocompletion
-      --  - Symbol Search
-      --  - and more!
-      --
-      -- Thus, Language Servers are external tools that must be installed separately from
-      -- Neovim. This is where `mason` and related plugins come into play.
-      --
-      -- If you're wondering about lsp vs treesitter, you can check out the wonderfully
-      -- and elegantly composed help section, `:help lsp-vs-treesitter`
-
       --  This function gets run when an LSP attaches to a particular buffer.
       --    That is to say, every time a new file is opened that is associated with
       --    an lsp (for example, opening `main.rs` is associated with `rust_analyzer`) this
@@ -915,22 +903,7 @@ require('lazy').setup {
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
-        -- clangd = {},
-        -- gopls = {},
-        -- pyright = {},
-        -- rust_analyzer = {},
-        -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
-        --
-        -- Some languages (like typescript) have entire language plugins that can be useful:
-        --    https://github.com/pmizio/typescript-tools.nvim
-        --
-        -- But for many setups, the LSP (`ts_ls`) will work just fine
-        -- ts_ls = {},
-        --
         lua_ls = {
-          -- cmd = {...},
-          -- filetypes = { ...},
-          -- capabilities = {},
           settings = {
             Lua = {
               completion = {
@@ -942,43 +915,6 @@ require('lazy').setup {
           },
         },
       }
-
-      -- Ensure the servers and tools above are installed
-      --  To check the current status of installed tools and/or manually install
-      --  other tools, you can run
-      --    :Mason
-      --
-      --  You can press `g?` for help in this menu.
-      require('mason').setup()
-
-      -- You can add other tools here that you want Mason to install
-      -- for you, so that they are available from within Neovim.
-      local ensure_installed = vim.tbl_keys(servers or {})
-      vim.list_extend(ensure_installed, {
-        'stylua', -- Used to format Lua code
-      })
-      require('mason-tool-installer').setup { ensure_installed = ensure_installed }
-
-      require('mason-lspconfig').setup {
-        ensure_installed = {
-          'jedi_language_server', -- Python
-          'rust_analyzer', -- Rust
-          'lua_ls', -- Lua
-          'clangd', -- C
-          'jq-lsp', -- JSON
-        },
-        automatic_installation = true,
-        handlers = {
-          function(server_name)
-            local server = servers[server_name] or {}
-            -- This handles overriding only values explicitly passed
-            -- by the server configuration above. Useful when disabling
-            -- certain features of an LSP (for example, turning off formatting for ts_ls)
-            server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-            require('lspconfig')[server_name].setup(server)
-          end,
-        },
-      }
     end,
   },
 
@@ -987,27 +923,7 @@ require('lazy').setup {
     'luukvbaal/statuscol.nvim',
     config = function()
       local builtin = require 'statuscol.builtin'
-      require('statuscol').setup {
-        --   -- configuration goes here, for example:
-        --   relculright = true,
-        --   segments = {
-        --     { text = { builtin.foldfunc }, click = 'v:lua.ScFa' },
-        --     {
-        --       sign = { namespace = { 'diagnostic/signs' }, maxwidth = 2, auto = true },
-        --       click = 'v:lua.ScSa',
-        --     },
-        --     { text = { builtin.lnumfunc }, click = 'v:lua.ScLa' },
-        --     {
-        --       sign = { name = { '.*' }, maxwidth = 2, colwidth = 1, auto = true, wrap = true },
-        --       click = 'v:lua.ScSa',
-        --     },
-        --     {
-        --       -- Git and diagnostic signs segment
-        --       sign = { name = { 'Diagnostic', 'GitSigns' }, maxwidth = 1, colwidth = 1, auto = true },
-        --       click = 'v:lua.ScSa',
-        --     },
-        --   },
-      }
+      require('statuscol').setup {}
     end,
   },
   -- QoL plugin (snacks)
@@ -1044,6 +960,7 @@ require('lazy').setup {
       },
     },
   },
+  -- Auto comment out
   {
     'numToStr/Comment.nvim',
     config = function()
@@ -1162,7 +1079,7 @@ require('lazy').setup {
           -- Accept ([y]es) the completion.
           --  This will auto-import if your LSP supports it.
           --  This will expand snippets if the LSP sent a snippet.
-          -- ['<C-y>'] = cmp.mapping.confirm { select = true },
+          ['<C-y>'] = cmp.mapping.confirm { select = true },
 
           -- If you prefer more traditional completion keymaps,
           -- you can uncomment the following lines
@@ -1299,16 +1216,8 @@ require('lazy').setup {
       },
       indent = { enable = true, disable = { 'ruby' } },
     },
-    -- config = function()
-    --   require('nvim-treesitter.install').prefer_git = true
-    -- end,
-    -- There are additional nvim-treesitter modules that you can use to interact
-    -- with nvim-treesitter. You should go explore a few and see what interests you:
-    --
-    --    - Incremental selection: Included, see `:help nvim-treesitter-incremental-selection-mod`
-    --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
-    --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
   },
+  -- Null-ls
   {
     'jose-elias-alvarez/null-ls.nvim',
     dependencies = {
@@ -1319,15 +1228,15 @@ require('lazy').setup {
     config = function()
       local null_ls = require 'null-ls'
       null_ls.setup {
-        sources = {
-          null_ls.builtins.diagnostics.flake8.with {
-            extra_args = { '--max-line-length', '100', '--ignore', 'DAR101,DAR201,DAR401,FNE005,FNE008,N802' },
-          },
-        },
+        -- sources = {
+        --   null_ls.builtins.diagnostics.flake8.with {
+        --     extra_args = { '--max-line-length', '100', '--ignore', 'DAR101,DAR201,DAR401,FNE005,FNE008,N802,DAR102,DAR003' },
+        --   },
+        -- },
       }
       -- Automatically install null-ls sources
       require('mason-null-ls').setup {
-        ensure_installed = { 'flake8' }, -- Make sure Flake8 is installed
+        -- ensure_installed = { 'flake8' }, -- Make sure Flake8 is installed
       }
     end,
   },
@@ -1347,30 +1256,236 @@ require('lazy').setup {
       vim.keymap.set('n', '];', dropbar_api.select_next_context, { desc = 'Select next context' })
     end,
   },
-
-  -- The following two comments only work if you have downloaded the kickstart repo, not just copy pasted the
-  -- init.lua. If you want these files, they are in the repository, so you can just download them and
-  -- place them in the correct locations.
-
-  -- NOTE: Next step on your Neovim journey: Add/Configure additional plugins for Kickstart
-  --
-  --  Here are some example plugins that I've included in the Kickstart repository.
-  --  Uncomment any of the lines below to enable them (you will need to restart nvim).
-  --
-  -- require 'kickstart.plugins.debug',
-  -- require 'kickstart.plugins.indent_line',
-  -- require 'kickstart.plugins.lint',
-  -- require 'kickstart.plugins.autopairs',
-  -- require 'kickstart.plugins.neo-tree',
-  -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
-
-  -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
-  --    This is the easiest way to modularize your config.
-  --
-  --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
-  --    For additional information, see `:help lazy.nvim-lazy.nvim-structuring-your-plugins`
-  -- { import = 'custom.plugins' },
 }
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
+
+-- SET UP LSP --
+local lspconfig = require 'lspconfig'
+
+require('lspconfig').clangd.setup {
+  -- cmd = { 'clangd', }, -- Replace with your actual path
+  on_attach = function(client, bufnr)
+    -- Custom on_attach code here
+  end,
+}
+
+lspconfig.rust_analyzer.setup {
+  settings = {
+    ['rust-analyzer'] = {
+      cargo = {
+        allFeatures = true,
+      },
+      checkOnSave = {
+        command = 'clippy',
+      },
+    },
+  },
+}
+
+lspconfig.lua_ls.setup {
+  settings = {
+    Lua = {
+      runtime = {
+        -- Tell the language server which version of Lua you're using
+        version = 'LuaJIT',
+      },
+      diagnostics = {
+        -- Get the language server to recognize the `vim` global
+        globals = { 'vim' },
+      },
+      workspace = {
+        -- Make the server aware of Neovim runtime files
+        library = vim.api.nvim_get_runtime_file('', true),
+      },
+      telemetry = {
+        -- Do not send telemetry data containing a unique identifier
+        enable = false,
+      },
+    },
+  },
+}
+
+lspconfig.pylsp.setup {
+  settings = {
+    pylsp = {
+      plugins = {
+        ruff = {
+          enabled = true, -- Enable the plugin
+          -- formatEnabled = true, -- Enable formatting using ruffs formatter
+          -- config = '<path_to_custom_ruff_toml>', -- Custom config for ruff to use
+          extendSelect = { 'ALL' }, -- Rules that are additionally used by ruff
+          -- extendIgnore = { 'C90' }, -- Rules that are additionally ignored by ruff
+          -- format = { 'I' }, -- Rules that are marked as fixable by ruff that should be fixed when running textDocument/formatting
+          -- severities = { ['D212'] = 'I' }, -- Optional table of rules where a custom severity is desired
+          unsafeFixes = false, -- Whether or not to offer unsafe fixes as code actions. Ignored with the "Fix All" action
+
+          -- Rules that are ignored when a pyproject.toml or ruff.toml is present:
+          lineLength = 100, -- Line length to pass to ruff checking and formatting
+          -- exclude = { '__about__.py' }, -- Files to be excluded by ruff checking
+          -- select = { 'F' }, -- Rules to be enabled by ruff
+          ignore = {
+            'FBT002',
+            'FBT001',
+            'I001',
+            'D400',
+            'D415',
+            'D212',
+            'D411',
+            'D407',
+            'D205',
+            'D401',
+            'D413',
+            'D407',
+            'D205',
+            'D101',
+            'D107',
+            'Q000',
+            'D204',
+            'PLR0913',
+            'T201',
+            'D417',
+            'COM812',
+            'EXE001',
+            'D406',
+            'ANN204',
+          }, -- Rules to be ignored by ruff
+          -- perFileIgnores = { ['__init__.py'] = 'CPY001' }, -- Rules that should be ignored for specific files
+          -- preview = false, -- Whether to enable the preview style linting and formatting.
+          -- targetVersion = 'py310', -- The minimum python version to target (applies for both linting and formatting).
+        },
+        -- pycodestyle = { enabled = true, ignore = { 'W391' }, maxLineLength = 100 },
+        -- pylint = { enabled = true, executable = 'pylint' },
+        -- flake8 = { enabled = true, ignore = { 'DAR101,DAR201,DAR401,FNE005,FNE008,N802,DAR102,DAR003' }, maxLineLength = 100, indentsize = 4 },
+        -- pyflakes = { enabled = false },
+        mypy = { enabled = true, strict = true },
+        jedi_completion = { enabled = true, fuzzy = true },
+        isort = { enabled = true },
+        pytypes = {
+          enabled = true, -- Enable the pytypes plugin
+          check_untyped_defs = true, -- Check for untyped function definitions
+          suggest_type = true, -- Suggest types for functions or variables that lack annotations
+        },
+      },
+    },
+  },
+}
+
+-- Function to enable Pyright
+function EnablePyright()
+  lspconfig.pyright.setup {}
+end
+
+-- Function to disable Pyright
+function DisablePyright()
+  -- Get all active LSP clients
+  local clients = vim.lsp.get_clients()
+  for _, client in ipairs(clients) do
+    -- Check if client is Pyright
+    if client.name == 'pyright' then
+      vim.lsp.stop_client(client.id)
+    end
+  end
+end
+
+-- Keybindings to toggle Pyright
+vim.api.nvim_set_keymap('n', '<leader>le', ':lua EnablePyright()<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>ld', ':lua DisablePyright()<CR>', { noremap = true, silent = true })
+
+-- Telescope Pyright integration
+
+local Job = require 'plenary.job'
+local pickers = require 'telescope.pickers'
+local finders = require 'telescope.finders'
+local previewers = require 'telescope.previewers'
+local actions = require 'telescope.actions'
+
+-- Function to run a shell command and display results in a Telescope floating window
+function run_command(command)
+  local current_file = vim.api.nvim_buf_get_name(0) -- Get current buffer's file path
+
+  -- If current file is empty, return (i.e., if it's a new unsaved buffer)
+  if current_file == '' then
+    print 'No file to run the command on!'
+    return
+  end
+
+  -- Modify the command to include the current file (but you only want the file content processed by the command)
+  local full_command = command .. ' ' .. current_file
+
+  -- Start the job with the updated command
+  Job:new({
+    command = 'zsh', -- Use zsh to run the command
+    args = { '-c', full_command }, -- Pass the full command to the shell
+    on_exit = function(j, return_val)
+      if return_val == 0 or return_val == 1 then
+        local result = j:result()
+
+        -- Strip out any file paths or extra info from the result
+        local stripped_result = {}
+        for _, line in ipairs(result) do
+          -- Replace the full path with just the message (adjust depending on the command)
+          local stripped_line = line:gsub(current_file, ''):gsub('^%s*(.-)%s*$', '%1') -- Removing file path
+          table.insert(stripped_result, stripped_line)
+        end
+
+        -- Schedule the picker creation to run after the job completes
+        vim.schedule(function()
+          pickers
+            .new({}, {
+              prompt_title = 'Command Output',
+              finder = finders.new_table {
+                results = stripped_result,
+              },
+              previewer = previewers.new_buffer_previewer {
+                define_preview = function(self, entry, status)
+                  -- Set the buffer with the cleaned result
+                  vim.api.nvim_buf_set_lines(self.state.bufnr, 0, -1, false, stripped_result)
+
+                  -- Set filetype to 'text' for generic output (could be customized based on command output)
+                  vim.api.nvim_buf_set_option(self.state.bufnr, 'filetype', 'text')
+
+                  -- Enable syntax highlighting if needed
+                  vim.cmd 'syntax enable'
+                end,
+              },
+              attach_mappings = function(_, map)
+                map('i', '<CR>', actions.close)
+                map('n', '<CR>', actions.close)
+                return true
+              end,
+            })
+            :find()
+        end)
+      else
+        print 'Command execution failed'
+      end
+    end,
+  }):start()
+end
+
+-- Set key mapping to trigger the run_command function with a placeholder command (e.g., pyright)
+vim.api.nvim_set_keymap(
+  'n',
+  '<leader>kl',
+  ':lua run_command("flake8 --max-line-length=100 --ignore=DAR101,DAR201,DAR401,DAR103,E231,FNE005,FNE008,N802,DAR102,DAR003")<CR>',
+  { noremap = true, silent = true, desc = 'Run flake8' }
+)
+
+local null_ls = require 'null-ls'
+
+null_ls.setup {
+  -- This config makes sure diagnostics stay enabled regardless of file size
+  on_attach = function(client, bufnr)
+    -- Enable inline diagnostics for large files as well
+    client.server_capabilities.documentFormattingProvider = true
+    client.server_capabilities.documentRangeFormattingProvider = true
+    vim.diagnostic.config {
+      virtual_text = true, -- Show inline diagnostics (virtual text)
+      signs = true,
+      underline = true,
+      update_in_insert = true,
+    }
+  end,
+}
