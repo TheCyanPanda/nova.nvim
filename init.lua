@@ -155,6 +155,9 @@ vim.keymap.set('v', 'w', ':s/\\%V', { desc = 'Search and replace string' })
 vim.keymap.set('i', '<S-Home>', '<C-o>^', { noremap = true, silent = true })
 vim.keymap.set('n', '<S-Home>', '^', { noremap = true, silent = true })
 
+-- Formatting with Ruff manually
+vim.api.nvim_set_keymap('n', '<leader>kr', ':lua vim.lsp.buf.formatting_sync()<CR>', { noremap = true, silent = true })
+
 -- Telescope mappings
 vim.api.nvim_set_keymap('n', '<leader>Tf', ':Telescope live_grep<CR>', { noremap = true, silent = true }) -- Search for string in folder
 vim.api.nvim_set_keymap('n', '<leader>Tg', ':Telescope grep_string<CR>', { noremap = true, silent = true }) -- Search for word under cursor
@@ -1313,7 +1316,7 @@ lspconfig.pylsp.setup {
       plugins = {
         ruff = {
           enabled = true, -- Enable the plugin
-          -- formatEnabled = true, -- Enable formatting using ruffs formatter
+          formatEnabled = false, -- Enable formatting using ruffs formatter
           -- config = '<path_to_custom_ruff_toml>', -- Custom config for ruff to use
           extendSelect = { 'ALL' }, -- Rules that are additionally used by ruff
           -- extendIgnore = { 'C90' }, -- Rules that are additionally ignored by ruff
