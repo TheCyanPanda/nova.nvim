@@ -155,8 +155,8 @@ vim.keymap.set('v', 'w', ':s/\\%V', { desc = 'Search and replace string' })
 vim.keymap.set('i', '<S-Home>', '<C-o>^', { noremap = true, silent = true })
 vim.keymap.set('n', '<S-Home>', '^', { noremap = true, silent = true })
 
--- Formatting with Ruff manually
-vim.api.nvim_set_keymap('n', '<leader>kr', ':lua vim.lsp.buf.formatting_sync()<CR>', { noremap = true, silent = true })
+-- Visual mode mapping to run black on selected lines
+vim.api.nvim_set_keymap('v', '<leader>kb', ':w !black -q -l 79 -<CR>', { noremap = true, silent = true })
 
 -- Telescope mappings
 vim.api.nvim_set_keymap('n', '<leader>Tf', ':Telescope live_grep<CR>', { noremap = true, silent = true }) -- Search for string in folder
@@ -170,6 +170,12 @@ vim.api.nvim_set_keymap(
   [[:lua require('telescope.builtin').current_buffer_fuzzy_find({ default_text = vim.fn.expand("<cword>") })<CR>]],
   { noremap = true, silent = true }
 ) -- Search for word under cursor in current buffer
+
+-- Custom commands
+vim.api.nvim_create_user_command('CheckCode', function()
+  vim.cmd '!CodeChecker analyze compile_commands.json -o ./codechecker_reports && CodeChecker parse ./codechecker_reports'
+  vim.cmd 'copen'
+end, {})
 
 -- Show full path of current file
 vim.api.nvim_set_keymap('n', '<leader>ss', ":echo expand('%:p')<CR>", { noremap = true, silent = true })
@@ -448,6 +454,21 @@ require('lazy').setup {
       vim.keymap.set('n', '<F4>', ':SymbolsOutline<CR>', {})
     end,
   },
+  -- Code checker
+  -- {
+  --   'dense-analysis/ale',
+  --   lazy = false, -- Ensure ALE loads at startup
+  --   config = function()
+  --     vim.g.ale_linters = {
+  --       c = { 'codechecker' }, -- Enable CodeChecker for C
+  --     }
+  --     vim.g.ale_fixers = {
+  --       c = {}, -- Add fixers if needed
+  --     }
+  --     vim.g.ale_virtualtext_cursor = 1 -- Show errors inline
+  --     -- vim.g.ale_open_list = 1 -- Open quickfix list on error
+  --   end,
+  -- },
 
   -- Diffview
   {
@@ -575,7 +596,18 @@ require('lazy').setup {
     'ggandor/leap.nvim',
     dependencies = { 'tpope/vim-repeat' },
     config = function()
+      -- Set up leap.nvim with default mappings first
       require('leap').add_default_mappings()
+
+      -- Use an autocommand to unmap 's' after VimEnter event
+      vim.api.nvim_create_autocmd('VimEnter', {
+        callback = function()
+          -- Set the new mapping for 's' to use leap.nvim functionality
+          vim.api.nvim_set_keymap('n', 's', '<Plug>(leap-forward-to)', { noremap = true, silent = true })
+          vim.api.nvim_set_keymap('x', 's', '<Plug>(leap-forward-to)', { noremap = true, silent = true })
+          vim.api.nvim_set_keymap('o', 's', '<Plug>(leap-forward-to)', { noremap = true, silent = true })
+        end,
+      })
     end,
   },
   {
@@ -1180,7 +1212,17 @@ require('lazy').setup {
       -- - saiw) - [S]urround [A]dd [I]nner [W]ord [)]Paren
       -- - sd'   - [S]urround [D]elete [']quotes
       -- - sr)'  - [S]urround [R]eplace [)] [']
-      require('mini.surround').setup()
+      require('mini.surround').setup {
+        mappings = {
+          add = '<C-s>a', -- Add surrounding in Normal and Visual modes
+          delete = '<C-s>d', -- Delete surrounding
+          find = '<C-s>f', -- Find surrounding (to the right)
+          find_left = '<C-s>F', -- Find surrounding (to the left)
+          highlight = '<C-s>h', -- Highlight surrounding
+          replace = '<C-s>r', -- Replace surrounding
+          update_n_lines = '<C-s>n', -- Update `n_lines`
+        },
+      }
 
       -- Simple and easy statusline.
       --  You could remove this setup call if you don't like it,
@@ -1268,7 +1310,7 @@ require('lazy').setup {
 local lspconfig = require 'lspconfig'
 
 require('lspconfig').clangd.setup {
-  -- cmd = { 'clangd', }, -- Replace with your actual path
+  cmd = { 'clangd', '--header-insertion=never' }, -- Replace with your actual path
   on_attach = function(client, bufnr)
     -- Custom on_attach code here
   end,
@@ -1365,6 +1407,11 @@ lspconfig.pylsp.setup {
         mypy = { enabled = true, strict = true },
         jedi_completion = { enabled = true, fuzzy = true },
         isort = { enabled = true },
+        black = {
+          enabled = true,
+          line_length = 100,
+          target_version = { 'py311' },
+        },
         pytypes = {
           enabled = true, -- Enable the pytypes plugin
           check_untyped_defs = true, -- Check for untyped function definitions
@@ -1475,20 +1522,26 @@ vim.api.nvim_set_keymap(
   ':lua run_command("flake8 --max-line-length=100 --ignore=DAR101,DAR201,DAR401,DAR103,E231,FNE005,FNE008,N802,DAR102,DAR003")<CR>',
   { noremap = true, silent = true, desc = 'Run flake8' }
 )
+-- Key mapping for formating buffer with ruff
+vim.api.nvim_set_keymap('n', '<leader>kr', ':!ruff format --line-length 100 %<CR>', { noremap = true, silent = true, desc = 'Format with ruff' })
 
-local null_ls = require 'null-ls'
+-- Define the format_buffer function globally
+_G.format_buffer = function()
+  local clients = vim.lsp.buf_get_clients()
+  for _, client in ipairs(clients) do
+    if client.resolved_capabilities and client.resolved_capabilities.document_formatting then
+      vim.lsp.buf.formatting_sync()
+      return
+    end
+  end
+  print 'No LSP client attached that supports formatting'
+end
 
-null_ls.setup {
-  -- This config makes sure diagnostics stay enabled regardless of file size
-  on_attach = function(client, bufnr)
-    -- Enable inline diagnostics for large files as well
-    client.server_capabilities.documentFormattingProvider = true
-    client.server_capabilities.documentRangeFormattingProvider = true
-    vim.diagnostic.config {
-      virtual_text = true, -- Show inline diagnostics (virtual text)
-      signs = true,
-      underline = true,
-      update_in_insert = true,
-    }
+-- Display tabs as 4 spaces
+vim.api.nvim_create_autocmd('BufEnter', {
+  pattern = '*',
+  callback = function()
+    vim.opt.tabstop = 4
+    vim.opt.expandtab = true
   end,
-}
+})
